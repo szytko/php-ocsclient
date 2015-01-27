@@ -14,11 +14,11 @@
  */
 
 // Exception classes
-require_once __DIR__ . '/src/Oktawave/OCS/Exception/OCSException.php';
+require_once __DIR__ . '/src/Oktawave/OCS/Exception.php';
 require_once __DIR__ . '/src/Oktawave/OCS/Exception/FormatNotSupportedException.php';
 require_once __DIR__ . '/src/Oktawave/OCS/Exception/HttpException.php';
 require_once __DIR__ . '/src/Oktawave/OCS/Exception/NotAuthenticatedException.php';
 
 // Main client class
-require_once __DIR__ . '/src/Oktawave/OCS/OCSClient.php';
+require_once __DIR__ . '/src/Oktawave/OCS/Client.php';
 ?>

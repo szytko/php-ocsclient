@@ -7,12 +7,14 @@
  * file that was distributed with this source code.
  */
 
+namespace Oktawave\OCS\Exception;
+
 /**
- * Oktawave_OCS_Exception_NotAuthenticatedException is thrown when OCS client is
+ * Oktawave\OCS\Exception\NotAuthenticatedException is thrown when OCS client is
  * not yet authenticated in OCS webservice.
  *
  * @author Antoni Orfin <aorfin@octivi.com>
  */
-class Oktawave_OCS_Exception_NotAuthenticatedException extends Oktawave_OCS_Exception_OCSException
+class NotAuthenticatedException extends \Oktawave\OCS\Exception
 {
 }

@@ -7,6 +7,8 @@
  * file that was distributed with this source code.
  */
 
+namespace Oktawave\OCS\Exception;
+
 /**
  * Oktawave_OCS_Exception_HttpException hold exception from Oktawave OCS 
  * HTTP response.
@@ -14,12 +16,12 @@
  * @author Antoni Orfin <aorfin@octivi.com>
  * @author Rafał Lorenz <rlorenz@octivi.com>
  */
-class Oktawave_OCS_Exception_HttpException extends Oktawave_OCS_Exception_OCSException
+class HttpException extends \Oktawave\OCS\Exception
 {
     protected $httpCode;
     protected $body;
 
-    public function __construct($message, $code = 0, $body = '', $httpCode = -1, Exception $previous = null)
+    public function __construct($message, $code = 0, $body = '', $httpCode = -1, \Exception $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->httpCode = $httpCode;

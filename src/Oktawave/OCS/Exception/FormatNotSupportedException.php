@@ -7,19 +7,21 @@
  * file that was distributed with this source code.
  */
 
+namespace Oktawave\OCS\Exception;
+
 /**
  * Oktawave_OCS_Exception_FormatNotSupportedException
  *
  * @author Antoni Orfin <aorfin@octivi.com>
  */
-class Oktawave_OCS_Exception_FormatNotSupportedException extends Oktawave_OCS_Exception_OCSException
+class FormatNotSupportedException extends \Oktawave\OCS\Exception
 {
     /**
      * @var string[]
      */
     protected $supportedFormats;
 
-    public function __construct($format, array $supportedFormats, $code = 0, Exception $previous = null)
+    public function __construct($format, array $supportedFormats, $code = 0, \Exception $previous = null)
     {
         $message = sprintf('Format "%s" is not supported. Supported formats are: %s', $format, implode(', ', $supportedFormats));
         parent::__construct($message, $code, $previous);

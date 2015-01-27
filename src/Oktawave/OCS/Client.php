@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Copyright (C) 2014 Oktawave Sp. z o.o. - oktawave.com
  *
@@ -7,13 +6,19 @@
  * file that was distributed with this source code.
  */
 
+namespace Oktawave\OCS;
+
+use Oktawave\OCS\Exception\HttpException;
+use Oktawave\OCS\Exception\NotAuthenticatedException;
+use Oktawave\OCS\Exception\FormatNotSupportedException;
+
 /**
  * Client to communication with Oktawave OCS server
  *
  * @author Rafał Lorenz <rlorenz@octivi.com>
  * @author Antoni Orfin <aorfin@octivi.com>
  */
-class Oktawave_OCS_OCSClient
+class Client
 {
 
     /**
@@ -46,6 +51,7 @@ class Oktawave_OCS_OCSClient
     protected $authToken;
     protected $storageUrl;
     protected $useragent = 'osc-client';
+    protected $curlVerboseMode = false;
 
     /**
      * The array of request content types based on the specified response format
@@ -67,6 +73,11 @@ class Oktawave_OCS_OCSClient
     {
         $this->url = $url;
         $this->bucket = $bucket;
+    }
+
+    public function enableVerboseMode()
+    {
+        $this->curlVerboseMode = true;
     }
 
     /**
@@ -91,11 +102,11 @@ class Oktawave_OCS_OCSClient
 
     /**
      * Authenticates OCS Client
-     * 
+     *
      * @param string $username
      * @param string $password
-     * 
-     * @return
+     *
+     * @throws HttpException
      */
     public function authenticate($username, $password)
     {
@@ -175,8 +186,8 @@ class Oktawave_OCS_OCSClient
         $dir = rtrim($dir, "/\\").'/';
 
         if ($recursive) {
-            $objects = new RecursiveIteratorIterator(
-                    new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST, RecursiveIteratorIterator::CATCH_GET_CHILD
+            $objects = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST, RecursiveIteratorIterator::CATCH_GET_CHILD
             );
             foreach ($objects as $name => $object) {
                 if (is_file($object)) {
@@ -296,11 +307,12 @@ class Oktawave_OCS_OCSClient
 
     /**
      * Checks if object exists
-     * 
+     *
      * @param string $path Path to OCS's object
-     * 
-     * @return boolean  Returns true if object exists on OCS
-     * @throws Oktawave_OCS_Exception_OCSException
+     * @return bool Returns true if object exists on OCS
+     * @throws Exception\NotAuthenticatedException
+     * @throws HttpException
+     * @throws \Exception
      */
     public function checkObject($path)
     {
@@ -309,15 +321,13 @@ class Oktawave_OCS_OCSClient
         try {
             $ret = $this->createCurl($this->bucket . '/' . $path, self::METHOD_HEAD);
             return $ret['httpCode'] === 200;
-        } catch (Oktawave_OCS_Exception_HttpException $e) {
+        } catch (HttpException $e) {
             if ($e->isNotFound()) {
                 return false;
             }
 
             throw $e;
         }
-
-        return false;
     }
 
     /**
@@ -326,7 +336,7 @@ class Oktawave_OCS_OCSClient
      * @param string $path Path to OCS's object
      * 
      * @return array  With the same format as a listObject returns for single object
-     * @throws Oktawave_OCS_Exception_OCSException
+     * @throws \Oktawave\OCS\Exception
      */
     public function getObjectMetadata($path)
     {
@@ -432,18 +442,18 @@ class Oktawave_OCS_OCSClient
     /**
      * Checks if OCS Client is authenticated
      * 
-     * @throws Oktawave_OCS_Exception_NotAuthenticatedException
+     * @throws \Oktawave\OCS\Exception\NotAuthenticatedException
      */
     protected function isAuthenticated()
     {
         if (!$this->authToken) {
-            throw new Oktawave_OCS_Exception_NotAuthenticatedException('Authentication required. Use authenticate method first!');
+            throw new NotAuthenticatedException('Authentication required. Use authenticate method first!');
         }
     }
 
     /**
      * Get Curl response
-     * 
+     *
      * @param string $endpoint
      * @param string $method
      * @param array $file
@@ -451,9 +461,9 @@ class Oktawave_OCS_OCSClient
      * @param boolean $includeHeader
      * @param boolean $noBody
      * @param string $format
-     * 
      * @return array
-     * @throws Oktawave_OCS_Exception_HttpException
+     * @throws Exception\FormatNotSupportedException
+     * @throws HttpException
      */
     protected function createCurl($endpoint, $method = self::METHOD_GET, array $file = null, array $customHeaders = null, $includeHeader = true, $noBody = false, $format = null)
     {
@@ -485,7 +495,7 @@ class Oktawave_OCS_OCSClient
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_CAINFO => dirname(__FILE__) . '/ca-bundle.crt',
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_VERBOSE => true,
+            CURLOPT_VERBOSE => $this->curlVerboseMode,
             CURLOPT_USERAGENT => $this->useragent,
             CURLOPT_FAILONERROR => true,
         ));
@@ -509,9 +519,7 @@ class Oktawave_OCS_OCSClient
                 curl_setopt($curl, CURLOPT_NOBODY, true);
                 break;
             case self::METHOD_POST:
-                curl_setopt($curl, array(
-                    CURLOPT_POST => true,
-                ));
+                curl_setopt($curl, CURLOPT_POST, true);
                 break;
             case self::METHOD_PUT:
                 curl_setopt($curl, CURLOPT_PUT, true);
@@ -557,7 +565,7 @@ class Oktawave_OCS_OCSClient
         if (0 === $errorCode) {
             return array('body' => $body, 'httpCode' => $httpCode, 'headers' => $responseHeaders);
         } else {
-            $e = new Oktawave_OCS_Exception_HttpException($errorMessage, $errorCode, $body, $httpCode);
+            $e = new HttpException($errorMessage, $errorCode, $body, $httpCode);
             throw $e;
         }
     }
@@ -614,13 +622,13 @@ class Oktawave_OCS_OCSClient
      * @param string $format
      * @param array $headers
      * 
-     * @throws Oktawave_OCS_Exception_FormatNotSupportedException
+     * @throws FormatNotSupportedException
      * @return array
      */
     protected function setContentType($format, $headers)
     {
         if (!isset(self::$contentType[$format])) {
-            throw new Oktawave_OCS_Exception_FormatNotSupportedException($format, array_keys(self::$contentType));
+            throw new FormatNotSupportedException($format, array_keys(self::$contentType));
         }
 
         $contentType = self::$contentType[$format];
